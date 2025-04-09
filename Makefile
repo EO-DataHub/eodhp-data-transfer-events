@@ -1,34 +1,47 @@
-.PHONY: dockerbuild dockerpush test testonce ruff black lint isort pre-commit-check requirements-update requirements setup
-VERSION ?= latest
-IMAGENAME = CHANGEME
-DOCKERREPO ?= public.ecr.aws/n1b3o1k2/ukeodhp
+.PHONY: dockerbuild dockerpush test testonce ruff lint pre-commit-check requirements-update requirements setup
+DOCKER ?= docker
+IMAGENAME ?= eodhp-data-transfer-events
+DOCKERREPO ?= public.ecr.aws/eodh
+VERSION ?= 0.1.0
 
-dockerbuild:
-	DOCKER_BUILDKIT=1 docker build -t ${IMAGENAME}:${VERSION} .
+.SILENT:
+MAKEFLAGS += --no-print-directory
 
-dockerpush: dockerbuild testdocker
-	docker tag ${IMAGENAME}:${VERSION} ${DOCKERREPO}/${IMAGENAME}:${VERSION}
-	docker push ${DOCKERREPO}/${IMAGENAME}:${VERSION}
+.PHONY: container-build
+container-build:
+	$(DOCKER) build -t $(DOCKERREPO)/${IMAGENAME}:$(VERSION) .
+
+.PHONY: container-push
+container-push:
+	$(DOCKER) push $(DOCKERREPO)/${IMAGENAME}:$(VERSION)
+
+.PHONY: run-dev
+run-dev:
+	python events/app.py
+
+.PHONY: run
+run:
+	python events/app.py
+
+.PHONY: ruff
+ruff:
+	./venv/bin/ruff check .
+
+.PHONY: fmt
+fmt:
+	./venv/bin/ruff check . --select I --fix
+	./venv/bin/ruff format .
 
 test:
-	./venv/bin/ptw CHANGEME-test-package-names
+	./venv/bin/ptw eodhp_data_transfer_events
 
 testonce:
 	./venv/bin/pytest
 
-ruff:
-	./venv/bin/ruff check .
-
-black:
-	./venv/bin/black .
-
-isort:
-	./venv/bin/isort . --profile black
-
 validate-pyproject:
 	validate-pyproject pyproject.toml
 
-lint: ruff black isort validate-pyproject
+lint: ruff validate-pyproject
 
 requirements.txt: venv pyproject.toml
 	./venv/bin/pip-compile
@@ -44,7 +57,6 @@ requirements-update: venv
 
 venv:
 	virtualenv -p python3.11 venv
-	./venv/bin/python -m ensurepip -U
 	./venv/bin/pip3 install pip-tools
 
 .make-venv-installed: venv requirements.txt requirements-dev.txt

@@ -13,12 +13,12 @@
 # limitations under the License.
 
 [project]
-name = "CHANGEME-component-name"
+name = "data-transfer-events"
 version = "0.1.0"
-description = "CHANGEME a short description"
+description = "Data transfer accounting events for transfers from workspace stores"
 readme = "README.md"
 
-# Our target version is Python 3.11, but it may work with earlier versions.
+# Our target version is Python 3.10, but it may work with earlier versions.
 requires-python = ">=3.11"
 
 license = {file = "LICENSE"}
@@ -27,11 +27,11 @@ license = {file = "LICENSE"}
 # authored the project, and a valid email address corresponding to the name
 # listed.
 authors = [
-  {name = "Telespazio UK Ltd", email = "CHANGEME-alex.hayward@telespazio.com" }
+  {name = "Telespazio UK Ltd", email = "alex.hayward@telespazio.com" }
 ]
 
 maintainers = [
-  {name = "Telespazio UK Ltd", email = "CHANGEME-alex.hayward@telespazio.com" }
+  {name = "Telespazio UK Ltd", email = "shahid.raza@telespazio.com" }
 ]
 
 # Classifiers help users find your project by categorizing it.
@@ -64,6 +64,8 @@ classifiers = [
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [
+  "boto3",
+  "pulsar-client"
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -75,7 +77,20 @@ dependencies = [
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["pip-tools", "pytest", "pytest-xdist", "pytest-mock", "pytest-watcher", "black", "ruff", "isort", "pre-commit"]
+dev = [
+    "pip-tools",
+    "pytest", 
+    "pytest-xdist", 
+    "pytest-mock", 
+    "pytest-watcher",
+    "httpx",
+    "validate-pyproject[all]",
+    "pre-commit",
+    "black",
+    "moto",
+    "isort",
+    "ruff"
+]
 
 # List URLs that are relevant to your project
 #
@@ -88,9 +103,9 @@ dev = ["pip-tools", "pytest", "pytest-xdist", "pytest-mock", "pytest-watcher", "
 # maintainers, and where to support the project financially. The key is
 # what's used to render the link text on PyPI.
 [project.urls]  # Optional
-homepage = "https://github.com/UKEODHP/"
-repository = "CHANGEME-https://github.com/UKEODHP/..."
-changelog = "CHANGEME-https://github.com/UKEODHP/.../master/CHANGELOG.md"
+homepage = "https://github.com/EO-DataHub/"
+repository = "https://github.com/EO-DataHub/eodhp-data-transfer-events"
+changelog = "https://github.com/EO-DataHub/eodhp-data-transfer-events/blob/main/CHANGELOG.md"
 
 [build-system]
 # These are the assumed default build requirements from pip:
@@ -105,7 +120,7 @@ markers = [
 ]
 
 [tool.setuptools]
-packages = ["CHANGEME-pythonpkgname"]
+packages = []
 
 [tool.black]
 line-length = 100
@@ -114,7 +129,9 @@ target-version = ['py311']
 [tool.ruff]
 line-length = 110
 target-version = "py311"
-select = ["E", "F", "B", "W"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
 
 exclude = [
     ".bzr",
@@ -148,3 +165,6 @@ disable = '''
     too-many-instance-attributes,
     logging-fstring-interpolation,
 '''
+
+[tool.isort]
+profile = "black"
