@@ -18,8 +18,8 @@ version = "0.1.0"
 description = "Data transfer accounting events for transfers from workspace stores"
 readme = "README.md"
 
-# Our target version is Python 3.10, but it may work with earlier versions.
-requires-python = ">=3.11"
+# Our target version is Python 3.12, but it may work with earlier versions.
+requires-python = ">=3.12"
 
 license = {file = "LICENSE"}
 
@@ -53,7 +53,7 @@ classifiers = [
   # "License :: Other/Proprietary License",
 
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
 ]
 
@@ -65,7 +65,10 @@ classifiers = [
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [
   "boto3",
-  "pulsar-client"
+  "pulsar-client",
+  "pysubnettree",
+  "requests",
+  "eodhp-utils@git+https://github.com/UKEODHP/eodhp-utils@v0.1.6",
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -110,7 +113,7 @@ changelog = "https://github.com/EO-DataHub/eodhp-data-transfer-events/blob/main/
 [build-system]
 # These are the assumed default build requirements from pip:
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
-requires = ["setuptools>=69.0.0", "wheel"]
+requires = ["setuptools>=69.0.0", "wheel", "setuptools-git-versioning>=2.0,<3"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]

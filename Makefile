@@ -17,11 +17,11 @@ container-push:
 
 .PHONY: run-dev
 run-dev:
-	python events/app.py
+	python billing_scanner/app.py
 
 .PHONY: run
 run:
-	python events/app.py
+	python billing_scanner/app.py
 
 .PHONY: ruff
 ruff:
@@ -56,7 +56,7 @@ requirements-update: venv
 	./venv/bin/pip-compile --extra dev -o requirements-dev.txt -U
 
 venv:
-	virtualenv -p python3.11 venv
+	virtualenv -p python3.12 venv
 	./venv/bin/pip3 install pip-tools
 
 .make-venv-installed: venv requirements.txt requirements-dev.txt
