@@ -9,3 +9,7 @@ class Config:
         self.PULSAR_BROKER_URL = os.getenv("PULSAR_URL", "pulsar://pulsar-proxy:6650")
         self.PULSAR_TOPIC = os.getenv("PULSAR_TOPIC", "billing-events")
         self.AWS_REGION = os.getenv("AWS_REGION", "eu-west-2")
+        self.AWS_IP_RANGES_URL = os.getenv(
+            "AWS_IP_RANGES_URL", "https://ip-ranges.amazonaws.com/ip-ranges.json"
+        )
+        self.DISTRIBUTION_ID = os.getenv("DISTRIBUTION_ID", "")

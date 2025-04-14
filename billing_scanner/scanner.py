@@ -30,7 +30,7 @@ class BillingScanner:
 
         # Load AWS IP ranges from the URL (which can be overridden via AWS_IP_RANGES_URL env var)
         try:
-            ip_data = load_aws_ip_ranges()  # Will use env var AWS_IP_RANGES_URL if set.
+            ip_data = load_aws_ip_ranges(self.config.AWS_IP_RANGES_URL)
             self.current_tree, self.aws_tree = build_subnet_trees(
                 ip_data, current_region=self.config.AWS_REGION
             )
@@ -43,7 +43,10 @@ class BillingScanner:
 
     def list_log_files(self) -> list:
         """Return a list of S3 object keys under the configured log folder."""
-        return list_files(self.s3_client, self.config.S3_BUCKET, self.config.LOG_FOLDER)
+        prefix = self.config.LOG_FOLDER
+        if self.config.DISTRIBUTION_ID:
+            prefix = f"{prefix}{self.config.DISTRIBUTION_ID}."
+        return list_files(self.s3_client, self.config.S3_BUCKET, prefix)
 
     def download_log_file(self, key: str) -> str:
         """Download the content of an S3 log file; decompress if necessary."""

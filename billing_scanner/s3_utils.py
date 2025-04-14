@@ -15,6 +15,10 @@ def init_s3_client(region: str):
 
 
 def list_files(s3_client, bucket: str, prefix: str) -> list:
+    """
+    List all S3 object keys under the given prefix.
+    If DISTRIBUTION_ID is set in the configuration, the prefix is adjusted.
+    """
     paginator = s3_client.get_paginator("list_objects_v2")
     pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
     file_keys = []

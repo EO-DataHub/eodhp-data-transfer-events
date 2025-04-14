@@ -6,6 +6,8 @@ from pulsar.schema import JsonSchema
 
 logger = logging.getLogger(__name__)
 
+_producer_cache = {}
+
 
 def publish_event(pulsar_broker: str, pulsar_topic: str, event) -> bool:
     """
@@ -14,10 +16,13 @@ def publish_event(pulsar_broker: str, pulsar_topic: str, event) -> bool:
     """
     try:
         client = get_pulsar_client(pulsar_url=pulsar_broker)
-        schema = JsonSchema(messages.BillingEvent)
-        producer = client.create_producer(pulsar_topic, schema=schema)
+        if pulsar_topic in _producer_cache:
+            producer = _producer_cache[pulsar_topic]
+        else:
+            schema = JsonSchema(messages.BillingEvent)
+            producer = client.create_producer(pulsar_topic, schema=schema)
+            _producer_cache[pulsar_topic] = producer
         producer.send(event)
-        producer.close()
         logger.info(f"Published event {event.uuid} via eodhp_utils.")
         return True
     except Exception:

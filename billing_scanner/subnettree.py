@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Tuple
 
 import requests
@@ -14,8 +13,6 @@ def load_aws_ip_ranges(url: str = None) -> dict:
     The URL is read from the environment variable 'AWS_IP_RANGES_URL' if not provided.
     By default, it falls back to "https://ip-ranges.amazonaws.com/ip-ranges.json".
     """
-    if url is None:
-        url = os.getenv("AWS_IP_RANGES_URL", "https://ip-ranges.amazonaws.com/ip-ranges.json")
     try:
         response = requests.get(url)
         response.raise_for_status()
