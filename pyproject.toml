@@ -13,7 +13,7 @@
 # limitations under the License.
 
 [project]
-name = "data-transfer-events"
+name = "eodhp-accounting-cloudfront"
 version = "0.1.0"
 description = "Data transfer accounting events for transfers from workspace stores"
 readme = "README.md"
@@ -66,6 +66,7 @@ classifiers = [
 dependencies = [
   "boto3",
   "pulsar-client",
+  "click",
   "pysubnettree",
   "requests",
   "eodhp-utils@git+https://github.com/UKEODHP/eodhp-utils@v0.1.7",
@@ -123,7 +124,7 @@ markers = [
 ]
 
 [tool.setuptools]
-packages = []
+packages = ["billing_scanner"]
 
 [tool.black]
 line-length = 100
