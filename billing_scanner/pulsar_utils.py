@@ -13,9 +13,7 @@ def create_producer(pulsar_topic: str):
     This function relies on get_pulsar_client (from eodhp_utils) to obtain the client
     """
     try:
-        client = (
-            get_pulsar_client()
-        )  # Uses the default from environment if no argument is provided.
+        client = get_pulsar_client()
         schema = JsonSchema(messages.BillingEvent)
         producer = client.create_producer(pulsar_topic, schema=schema)
         logger.info(f"Created Pulsar producer for topic: {pulsar_topic}")

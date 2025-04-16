@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from collections import defaultdict
@@ -36,12 +37,32 @@ class BillingScanner:
             logger.exception("Cannot load AWS IP ranges; aborting to prevent overcharging.")
             raise
 
+    def get_start_after_key(self) -> str:
+        """
+        Returns the key (or prefix) to use with the S3 'StartAfter' parameter.
+        It reads the state file and returns the lexicographically greatest key that has been processed.
+        If no keys have been processed, it returns an empty string.
+        """
+        try:
+            with open(self.config.STATE_FILE, "r") as f:
+                data = json.load(f)
+            processed_keys = data.get("processed", [])
+            if processed_keys:
+                return max(processed_keys)
+            else:
+                return ""
+        except Exception as e:
+            logger.exception(f"Error reading state file {self.config.STATE_FILE}: {e}")
+            return ""
+
     def list_log_files(self) -> list:
         """Return a list of S3 object keys under the configured log folder."""
         prefix = self.config.LOG_FOLDER
         if self.config.DISTRIBUTION_ID:
             prefix = f"{prefix}{self.config.DISTRIBUTION_ID}."
-        return list_files(self.s3_client, self.config.S3_BUCKET, prefix)
+        start_after = self.get_start_after_key()
+        logger.info(f"Using start_after key: '{start_after}' for S3 listing")
+        return list_files(self.s3_client, self.config.S3_BUCKET, prefix, start_after)
 
     def download_log_file(self, key: str) -> str:
         """Download the content of an S3 log file; decompress if necessary."""
@@ -97,6 +118,7 @@ class BillingScanner:
                 self.producer.send(billing_event)
             except Exception:
                 logger.exception(f"Failed to publish billing event for group key {group_key}")
+                return False
         return True
 
     def process_log_line(self, line: str, log_filename: str) -> dict:
@@ -106,10 +128,11 @@ class BillingScanner:
           - Index 2: date (e.g., "2025-04-07")
           - Index 3: time (e.g., "13:38:48")
           - Index 5: sc-bytes (data size)
-          - Index 8: cs(Host) (domain)
-          - Index 9: cs-uri-stem (URI path)
-        For notebook access:
-          - The workspace is extracted from cs-uri-stem (e.g., "tjellicoe-tpzuk")
+          - Field index 6: c-ip (client IP)
+        - Field index 17: x-host-header
+        use the x-host-header to extract the workspace. It is expected to have the form:
+        {workspace}[.{cluster}].eodatahub-workspaces.org.uk
+        If x-host-header does not match that pattern, the log line is skipped.
         For SKU:
           -  Determine the SKU (pricing category) using the client IP address
             and CIDR lookup via PySubnetTree.
@@ -123,14 +146,31 @@ class BillingScanner:
             date = fields[2]
             time_str = fields[3]
             sc_bytes = int(fields[5])
-            cs_host = fields[8]
             client_ip = fields[6]
-            cs_uri_stem = fields[9]
 
-            # Extract the workspace from cs-uri-stem for notebook access.
-            # Assume cs-uri-stem is in the form "/notebooks/user/<workspace>/api/...".
-            parts = cs_uri_stem.split("/")
-            workspace = parts[3] if len(parts) > 3 else "default"
+            # Expecting x-host-header at index 17, e.g.: "myworkspace.eodatahub-workspaces.org.uk" or
+            # "myworkspace.cluster.eodatahub-workspaces.org.uk"
+            if len(fields) > 17:
+                x_host_header = fields[17]
+            else:
+                x_host_header = ""
+
+            workspace = None
+            expected_domain = "eodatahub-workspaces.org.uk"
+            if x_host_header.endswith(expected_domain):
+                # Split the host into parts using dot.
+                parts = x_host_header.split(".")
+                # Use the first part (before the first dot) as the workspace if it is non-empty.
+                if parts[0]:
+                    workspace = parts[0]
+
+            # If workspace cannot be determined, ignore this log line.
+            if not workspace:
+                logger.info(
+                    "Unable to determine workspace from host header '%s'; ignoring line.",
+                    x_host_header,
+                )
+                return None
 
             # Determine the SKU using the client IP and the subnet trees.
             sku_enum = self.aws_classifier.classify(client_ip)
@@ -147,7 +187,6 @@ class BillingScanner:
                 "uuid": str(event_uuid),
                 "workspace": workspace,
                 "sku": sku,
-                "cs-host": cs_host,
                 "data_size": sc_bytes,
                 "timestamp": timestamp_iso,
                 "aggregation_key": aggregation_key,

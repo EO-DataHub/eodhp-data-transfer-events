@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -18,6 +18,4 @@ ADD pyproject.toml ./
 
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install -r requirements.txt .
 
-# Change as required, eg
-#  CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0", "-k", "uvicorn.workers.UvicornWorker", "--log-level", "debug", "mymodule.main:app"]
-CMD ["python", "-m", "billing_scanner.__main__"]
+CMD ["python", "-m", "billing_scanner"]

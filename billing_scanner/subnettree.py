@@ -61,8 +61,6 @@ class AWSIPClassifier:
         current_tree = SubnetTree.SubnetTree()
         aws_tree = SubnetTree.SubnetTree()
         for prefix in ip_data.get("prefixes", []):
-            if prefix.get("service") != "AMAZON":
-                continue
             cidr = prefix.get("ip_prefix")
             region = prefix.get("region", "")
             if cidr:

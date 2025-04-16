@@ -14,15 +14,17 @@ def init_s3_client(region: str):
     return get_boto3_session().client("s3", region_name=region)
 
 
-def list_files(s3_client, bucket: str, prefix: str) -> list:
+def list_files(s3_client, bucket: str, prefix: str, start_after: str = None) -> list:
     """
     List all S3 object keys under the given prefix.
     If DISTRIBUTION_ID is set in the configuration, the prefix is adjusted.
     """
     paginator = s3_client.get_paginator("list_objects_v2")
-    pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
+    kwargs = {"Bucket": bucket, "Prefix": prefix}
+    if start_after:
+        kwargs["StartAfter"] = start_after
     file_keys = []
-    for page in pages:
+    for page in paginator.paginate(**kwargs):
         for obj in page.get("Contents", []):
             file_keys.append(obj["Key"])
     return file_keys
@@ -38,5 +40,5 @@ def download_file(s3_client, bucket: str, key: str) -> str:
             body = body.decode("utf-8")
         return body
     except Exception as e:
-        logging.exception(f"Failed to download {e}")
+        logger.exception(f"Failed to download file from bucket '{bucket}' with key '{key}': {e}")
         raise

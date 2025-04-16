@@ -32,7 +32,7 @@ fmt:
 	./venv/bin/ruff format .
 
 test:
-	./venv/bin/ptw eodhp-accounting-cloudfront
+	./venv/bin/ptw tests 
 
 testonce:
 	./venv/bin/pytest
@@ -56,6 +56,7 @@ requirements-update: venv
 
 venv:
 	virtualenv -p python3.12 venv
+	./venv/bin/python -m ensurepip -U
 	./venv/bin/pip3 install pip-tools
 
 .make-venv-installed: venv requirements.txt requirements-dev.txt
