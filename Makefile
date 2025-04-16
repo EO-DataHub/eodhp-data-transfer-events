@@ -1,28 +1,27 @@
 .PHONY: dockerbuild dockerpush test testonce ruff lint pre-commit-check requirements-update requirements setup
 DOCKER ?= docker
-IMAGENAME ?= eodhp-data-transfer-events
+IMAGENAME ?= eodhp-accounting-cloudfront
 DOCKERREPO ?= public.ecr.aws/eodh
-VERSION ?= 0.1.0
+VERSION ?= latest
 
 .SILENT:
 MAKEFLAGS += --no-print-directory
 
-.PHONY: container-build
-container-build:
+.PHONY: dockerbuild
+dockerbuild:
 	$(DOCKER) build -t $(DOCKERREPO)/${IMAGENAME}:$(VERSION) .
 
-.PHONY: container-push
-container-push:
+.PHONY: dockerpush
+dockerpush:
 	$(DOCKER) push $(DOCKERREPO)/${IMAGENAME}:$(VERSION)
 
 .PHONY: run-dev
 run-dev:
-	python billing_scanner/app.py
+	PYTHONPATH=. ./venv/bin/python billing_scanner/__main__.py
 
 .PHONY: run
 run:
-	python billing_scanner/app.py
-
+	PYTHONPATH=. ./venv/bin/python billing_scanner/__main__.py 
 .PHONY: ruff
 ruff:
 	./venv/bin/ruff check .
@@ -33,7 +32,7 @@ fmt:
 	./venv/bin/ruff format .
 
 test:
-	./venv/bin/ptw eodhp_data_transfer_events
+	./venv/bin/ptw eodhp-accounting-cloudfront
 
 testonce:
 	./venv/bin/pytest
@@ -41,7 +40,7 @@ testonce:
 validate-pyproject:
 	validate-pyproject pyproject.toml
 
-lint: ruff validate-pyproject
+lint: ruff black isort validate-pyproject
 
 requirements.txt: venv pyproject.toml
 	./venv/bin/pip-compile

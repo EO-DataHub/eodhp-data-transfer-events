@@ -1,17 +1,17 @@
 import gzip
 import logging
 
-import boto3
+from eodhp_utils.runner import get_boto3_session
 
 logger = logging.getLogger(__name__)
 
 
 def init_s3_resource(region: str):
-    return boto3.resource("s3", region_name=region)
+    return get_boto3_session().resource("s3", region_name=region)
 
 
 def init_s3_client(region: str):
-    return boto3.client("s3", region_name=region)
+    return get_boto3_session().client("s3", region_name=region)
 
 
 def list_files(s3_client, bucket: str, prefix: str) -> list:
