@@ -1,29 +1,41 @@
-.PHONY: dockerbuild dockerpush test testonce ruff black lint isort pre-commit-check requirements-update requirements setup
+.PHONY: dockerbuild dockerpush test testonce ruff lint pre-commit-check requirements-update requirements setup
+DOCKER ?= docker
+IMAGENAME ?= eodhp-accounting-cloudfront
+DOCKERREPO ?= public.ecr.aws/eodh
 VERSION ?= latest
-IMAGENAME = CHANGEME
-DOCKERREPO ?= public.ecr.aws/n1b3o1k2/ukeodhp
 
+.SILENT:
+MAKEFLAGS += --no-print-directory
+
+.PHONY: dockerbuild
 dockerbuild:
-	DOCKER_BUILDKIT=1 docker build -t ${IMAGENAME}:${VERSION} .
+	$(DOCKER) build -t $(DOCKERREPO)/${IMAGENAME}:$(VERSION) .
 
-dockerpush: dockerbuild testdocker
-	docker tag ${IMAGENAME}:${VERSION} ${DOCKERREPO}/${IMAGENAME}:${VERSION}
-	docker push ${DOCKERREPO}/${IMAGENAME}:${VERSION}
+.PHONY: dockerpush
+dockerpush:
+	$(DOCKER) push $(DOCKERREPO)/${IMAGENAME}:$(VERSION)
 
-test:
-	./venv/bin/ptw CHANGEME-test-package-names
+.PHONY: run-dev
+run-dev:
+	PYTHONPATH=. ./venv/bin/python billing_scanner/__main__.py
 
-testonce:
-	./venv/bin/pytest
-
+.PHONY: run
+run:
+	PYTHONPATH=. ./venv/bin/python billing_scanner/__main__.py 
+.PHONY: ruff
 ruff:
 	./venv/bin/ruff check .
 
-black:
-	./venv/bin/black .
+.PHONY: fmt
+fmt:
+	./venv/bin/ruff check . --select I --fix
+	./venv/bin/ruff format .
 
-isort:
-	./venv/bin/isort . --profile black
+test:
+	./venv/bin/ptw tests 
+
+testonce:
+	./venv/bin/pytest
 
 validate-pyproject:
 	validate-pyproject pyproject.toml
@@ -43,7 +55,7 @@ requirements-update: venv
 	./venv/bin/pip-compile --extra dev -o requirements-dev.txt -U
 
 venv:
-	virtualenv -p python3.11 venv
+	virtualenv -p python3.12 venv
 	./venv/bin/python -m ensurepip -U
 	./venv/bin/pip3 install pip-tools
 
