@@ -1,4 +1,3 @@
-import json
 import logging
 import uuid
 from collections import defaultdict
@@ -36,24 +35,6 @@ class BillingScanner:
         except Exception:
             logger.exception("Cannot load AWS IP ranges; aborting to prevent overcharging.")
             raise
-
-    def get_start_after_key(self) -> str:
-        """
-        Returns the key (or prefix) to use with the S3 'StartAfter' parameter.
-        It reads the state file and returns the lexicographically greatest key that has been processed.
-        If no keys have been processed, it returns an empty string.
-        """
-        try:
-            with open(self.config.STATE_FILE, "r") as f:
-                data = json.load(f)
-            processed_keys = data.get("processed", [])
-            if processed_keys:
-                return max(processed_keys)
-            else:
-                return ""
-        except Exception as e:
-            logger.exception(f"Error reading state file {self.config.STATE_FILE}: {e}")
-            return ""
 
     def list_log_files(self) -> list:
         """Return a list of S3 object keys under the configured log folder."""
@@ -153,7 +134,7 @@ class BillingScanner:
 
             suffix = f".{self.config.WORKSPACES_DOMAIN}"
             if not x_host_header.endswith(suffix):
-                logger.info("Host '%s' doesn’t end in '%s'; ignoring line.", x_host_header, suffix)
+                logger.info("Host '%s' doesn't end in '%s'; ignoring line", x_host_header, suffix)
                 return None
 
             # strip off the suffix, then take the first label as the workspace
