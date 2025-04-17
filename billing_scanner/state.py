@@ -13,7 +13,7 @@ class ScannerState:
 
     def __init__(self, file_location: str):
         self.file_location = file_location
-        self.processed = set()
+        self.last_processed = ""
 
     def __enter__(self):
         # Open the file in r+ mode; if file does not exist, create it.
@@ -29,18 +29,18 @@ class ScannerState:
         try:
             self.f.seek(0)
             data = json.load(self.f)
-            self.processed = set(data.get("processed", []))
+            self.last_processed = data.get("last_processed", "")
         except json.JSONDecodeError:
             self.processed = set()
         return self
 
-    def already_scanned(self, file_key: str) -> bool:
-        """Return True if the given file key has already been processed."""
-        return file_key in self.processed
+    def get_last_processed_key(self) -> str:
+        """Return the last processed."""
+        return self.last_processed
 
-    def mark_scanned(self, file_key: str):
+    def mark_last_processed(self, file_key: str):
         """Mark a file key as processed."""
-        self.processed.add(file_key)
+        self.last_processed = file_key
 
     def __exit__(self, exc_type, exc_value, traceback):
         # Write the updated state back to the file.

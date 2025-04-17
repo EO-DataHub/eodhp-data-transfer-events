@@ -15,3 +15,4 @@ class Config:
             "FALLBACK_IP_RANGES_FILE", "/mnt/state/fallback_ip_ranges.json"
         )
         self.DISTRIBUTION_ID = os.getenv("DISTRIBUTION_ID", "")
+        self.WORKSPACES_DOMAIN = os.getenv("WORKSPACES_DOMAIN", "eodatahub-workspaces.org.uk")

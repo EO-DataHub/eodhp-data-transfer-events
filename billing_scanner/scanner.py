@@ -60,9 +60,9 @@ class BillingScanner:
         prefix = self.config.LOG_FOLDER
         if self.config.DISTRIBUTION_ID:
             prefix = f"{prefix}{self.config.DISTRIBUTION_ID}."
-        start_after = self.get_start_after_key()
-        logger.info(f"Using start_after key: '{start_after}' for S3 listing")
-        return list_files(self.s3_client, self.config.S3_BUCKET, prefix, start_after)
+        with ScannerState(self.config.STATE_FILE) as state:
+            start_after = state.get_last_processed_key()
+        return list_files(self.s3_client, self.config.S3_BUCKET, prefix, start_after=start_after)
 
     def download_log_file(self, key: str) -> str:
         """Download the content of an S3 log file; decompress if necessary."""
@@ -148,21 +148,17 @@ class BillingScanner:
             sc_bytes = int(fields[5])
             client_ip = fields[6]
 
-            # Expecting x-host-header at index 17, e.g.: "myworkspace.eodatahub-workspaces.org.uk" or
-            # "myworkspace.cluster.eodatahub-workspaces.org.uk"
-            if len(fields) > 17:
-                x_host_header = fields[17]
-            else:
-                x_host_header = ""
+            # x‑host‑header field
+            x_host_header = fields[17] if len(fields) > 17 else ""
 
-            workspace = None
-            expected_domain = "eodatahub-workspaces.org.uk"
-            if x_host_header.endswith(expected_domain):
-                # Split the host into parts using dot.
-                parts = x_host_header.split(".")
-                # Use the first part (before the first dot) as the workspace if it is non-empty.
-                if parts[0]:
-                    workspace = parts[0]
+            suffix = f".{self.config.WORKSPACES_DOMAIN}"
+            if not x_host_header.endswith(suffix):
+                logger.info("Host '%s' doesn’t end in '%s'; ignoring line.", x_host_header, suffix)
+                return None
+
+            # strip off the suffix, then take the first label as the workspace
+            host_prefix = x_host_header[: -len(suffix)]
+            workspace = host_prefix.split(".", 1)[0]
 
             # If workspace cannot be determined, ignore this log line.
             if not workspace:
@@ -204,11 +200,9 @@ class BillingScanner:
             f"under {self.config.LOG_FOLDER}."
         )
         with ScannerState(self.config.STATE_FILE) as state:
-            new_files = [key for key in all_files if not state.already_scanned(key)]
-            logger.info(f"Identified {len(new_files)} new file(s) to process.")
-            for key in new_files:
+            for key in all_files:
                 if self.process_log_file(key):
-                    state.mark_scanned(key)
+                    state.mark_last_processed(key)
                 else:
                     logger.exception(f"Failed to process file {key}; will be retried later.")
 
