@@ -36,15 +36,6 @@ class BillingScanner:
             logger.exception("Cannot load AWS IP ranges; aborting to prevent overcharging.")
             raise
 
-    def list_log_files(self) -> list:
-        """Return a list of S3 object keys under the configured log folder."""
-        prefix = self.config.LOG_FOLDER
-        if self.config.DISTRIBUTION_ID:
-            prefix = f"{prefix}{self.config.DISTRIBUTION_ID}."
-        with ScannerState(self.config.STATE_FILE) as state:
-            start_after = state.get_last_processed_key()
-        return list_files(self.s3_client, self.config.S3_BUCKET, prefix, start_after=start_after)
-
     def download_log_file(self, key: str) -> str:
         """Download the content of an S3 log file; decompress if necessary."""
         return download_file(self.s3_client, self.config.S3_BUCKET, key)
@@ -175,16 +166,43 @@ class BillingScanner:
 
     def run(self):
         logger.info("Running BillingScanner...")
-        all_files = self.list_log_files()
-        logger.info(
-            f"Found {len(all_files)} file(s) in bucket {self.config.S3_BUCKET} "
-            f"under {self.config.LOG_FOLDER}."
-        )
+        # Build the S3 prefix
+        prefix = self.config.LOG_FOLDER
+        if self.config.DISTRIBUTION_ID:
+            prefix = f"{prefix}{self.config.DISTRIBUTION_ID}."
         with ScannerState(self.config.STATE_FILE) as state:
-            for key in all_files:
-                if self.process_log_file(key):
-                    state.mark_last_processed(key)
-                else:
-                    logger.exception(f"Failed to process file {key}; will be retried later.")
+            start_after = state.last_processed or ""
+            logger.info(
+                f"Listing from bucket={self.config.S3_BUCKET} prefix={prefix} start_after={start_after!r}"
+            )
+            # List all keys after the last-processed marker
+            all_keys = list_files(
+                self.s3_client,
+                self.config.S3_BUCKET,
+                prefix,
+                start_after=start_after,
+            )
+            logger.info(
+                f"Found {len(all_keys)} file(s) in bucket {self.config.S3_BUCKET} "
+                f"under {self.config.LOG_FOLDER}."
+            )
+
+            # Only process those strictly after the last_processed marker
+            new_keys = [k for k in all_keys if k > start_after]
+            logger.info(f"Identified {len(new_keys)} new file(s) to process.")
+            for key in new_keys:
+                try:
+                    success = self.process_log_file(key)
+                except Exception as err:
+                    logger.error(f"Error processing '{key}': {err}")
+                    # fail fast so we retry this key next time
+                    raise
+                if not success:
+                    # if we returned False (e.g. empty file), retry next run
+                    logger.warning(f"No content in '{key}', will retry later.")
+                    break
+
+                # only mark as done once we know it succeeded
+                state.mark_last_processed(key)
 
         logger.info("BillingScanner run complete.")

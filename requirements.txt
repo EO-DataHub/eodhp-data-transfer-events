@@ -29,7 +29,7 @@ deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-eodhp-utils @ git+https://github.com/UKEODHP/eodhp-utils@v0.1.7
+eodhp-utils @ git+https://github.com/UKEODHP/eodhp-utils@v0.1.9
     # via eodhp-accounting-cloudfront (pyproject.toml)
 faker==37.1.0
     # via eodhp-utils

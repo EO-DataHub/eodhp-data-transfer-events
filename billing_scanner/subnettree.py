@@ -37,9 +37,9 @@ class AWSIPClassifier:
             response = requests.get(self.url)
             response.raise_for_status()
             ip_data = response.json()
-            logger.info("Successfully loaded AWS IP ranges from remote URL.")
+            logger.info(f"Successfully loaded AWS IP ranges from remote URL {self.url}.")
         except Exception:
-            logger.exception("Failed to load AWS IP ranges from remote URL.")
+            logger.exception(f"Failed to load AWS IP ranges from remote URL {self.url}.")
             # If a fallback file is provided, attempt to load it.
             if fallback_file:
                 try:
@@ -58,16 +58,34 @@ class AWSIPClassifier:
     def build_trees(
         ip_data: dict, current_region: str
     ) -> Tuple[SubnetTree.SubnetTree, SubnetTree.SubnetTree]:
+        """
+        Builds two SubnetTree objects:
+        - current_tree: ranges for the specified current_region
+        - aws_tree: ranges for all other regions
+
+        Includes both IPv4 (ip_prefix) and IPv6 (ipv6_prefix).
+        """
         current_tree = SubnetTree.SubnetTree()
         aws_tree = SubnetTree.SubnetTree()
         for prefix in ip_data.get("prefixes", []):
-            cidr = prefix.get("ip_prefix")
             region = prefix.get("region", "")
-            if cidr:
+
+            # IPv4
+            cidr4 = prefix.get("ip_prefix")
+            if cidr4:
                 if region == current_region:
-                    current_tree[cidr] = EgressSKU.REGION.value
+                    current_tree[cidr4] = EgressSKU.REGION.value
                 else:
-                    aws_tree[cidr] = EgressSKU.INTERREGION.value
+                    aws_tree[cidr4] = EgressSKU.INTERREGION.value
+
+            # IPv6
+            cidr6 = prefix.get("ipv6_prefix")
+            if cidr6:
+                if region == current_region:
+                    current_tree[cidr6] = EgressSKU.REGION.value
+                else:
+                    aws_tree[cidr6] = EgressSKU.INTERREGION.value
+
         return current_tree, aws_tree
 
     def classify(self, client_ip: str) -> EgressSKU:
