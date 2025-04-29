@@ -20,7 +20,7 @@ class ScannerState:
         if not os.path.exists(self.file_location):
             # Create an empty state file if it doesn't exist.
             with open(self.file_location, "w+") as f:
-                json.dump({"Last processed": ""}, f)
+                json.dump({"last_processed": ""}, f)
 
         # Open the file in read-write mode.
         self.f = open(self.file_location, "r+")
