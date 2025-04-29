@@ -110,14 +110,10 @@ class BillingScanner:
 
         # Split by tab
         fields = line.split("\t")
-        try:
-            date = fields[2]
-            time_str = fields[3]
-            sc_bytes = int(fields[5])
-            client_ip = fields[6]
-        except (IndexError, ValueError) as e:
-            logger.warning("Skipping malformed line: %s", e)
-            return None
+        date = fields[2]
+        time_str = fields[3]
+        sc_bytes = int(fields[5])
+        client_ip = fields[6]
 
         # x‑host‑header field
         x_host_header = fields[17] if len(fields) > 17 else ""
