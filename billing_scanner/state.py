@@ -45,7 +45,7 @@ class ScannerState:
     def __exit__(self, exc_type, exc_value, traceback):
         # Write the updated state back to the file.
         self.f.seek(0)
-        json.dump({"processed": list(self.last_processed)}, self.f, indent=2)
+        json.dump({"last_processed": list(self.last_processed)}, self.f, indent=2)
         self.f.truncate()
         # Release the lock and close the file.
         fcntl.flock(self.f, fcntl.LOCK_UN)
