@@ -86,11 +86,7 @@ class BillingScanner:
             billing_event.sku = group["sku"]
             billing_event.workspace = group["workspace"]
             billing_event.quantity = float(group["data_size"])
-            try:
-                self.producer.send(billing_event)
-            except Exception:
-                logger.exception(f"Failed to publish billing event for group key {group_key}")
-                return False
+            self.producer.send(billing_event)
         return True
 
     def process_log_line(self, line: str, log_filename: str) -> dict:
@@ -119,50 +115,50 @@ class BillingScanner:
             time_str = fields[3]
             sc_bytes = int(fields[5])
             client_ip = fields[6]
-
-            # x‑host‑header field
-            x_host_header = fields[17] if len(fields) > 17 else ""
-
-            suffix = f".{self.config.WORKSPACES_DOMAIN}"
-            if not x_host_header.endswith(suffix):
-                logger.info("Host '%s' doesn't end in '%s'; ignoring line", x_host_header, suffix)
-                return None
-
-            # strip off the suffix, then take the first label as the workspace
-            host_prefix = x_host_header[: -len(suffix)]
-            workspace = host_prefix.split(".", 1)[0]
-
-            # If workspace cannot be determined, ignore this log line.
-            if not workspace:
-                logger.info(
-                    "Unable to determine workspace from host header '%s'; ignoring line.",
-                    x_host_header,
-                )
-                return None
-
-            # Determine the SKU using the client IP and the subnet trees.
-            sku_enum = self.aws_classifier.classify(client_ip)
-            sku = sku_enum.value
-
-            # Generate the aggregation (or event) key as "<log_filename>-<workspace>-<sku>"
-            aggregation_key = f"{log_filename}-{workspace}-{sku}"
-            # Generate a UUID based on the event_key using uuid5 for stable deduplication.
-            event_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, aggregation_key)
-
-            timestamp_iso = f"{date}T{time_str}Z"
-
-            event = {
-                "uuid": str(event_uuid),
-                "workspace": workspace,
-                "sku": sku,
-                "data_size": sc_bytes,
-                "timestamp": timestamp_iso,
-                "aggregation_key": aggregation_key,
-            }
-            return event
-        except Exception as e:
-            logger.exception(f"Error parsing line: {line}. Exception: {e}")
+        except (IndexError, ValueError) as e:
+            logger.warning("Skipping malformed line: %s", e)
             return None
+
+        # x‑host‑header field
+        x_host_header = fields[17] if len(fields) > 17 else ""
+
+        suffix = f".{self.config.WORKSPACES_DOMAIN}"
+        if not x_host_header.endswith(suffix):
+            logger.info("Host '%s' doesn't end in '%s'; ignoring line", x_host_header, suffix)
+            return None
+
+        # strip off the suffix, then take the first label as the workspace
+        host_prefix = x_host_header[: -len(suffix)]
+        workspace = host_prefix.split(".", 1)[0]
+
+        # If workspace cannot be determined, ignore this log line.
+        if not workspace:
+            logger.info(
+                "Unable to determine workspace from host header '%s'; ignoring line.",
+                x_host_header,
+            )
+            return None
+
+        # Determine the SKU using the client IP and the subnet trees.
+        sku_enum = self.aws_classifier.classify(client_ip)
+        sku = sku_enum.value
+
+        # Generate the aggregation (or event) key as "<log_filename>-<workspace>-<sku>"
+        aggregation_key = f"{log_filename}-{workspace}-{sku}"
+        # Generate a UUID based on the event_key using uuid5 for stable deduplication.
+        event_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, aggregation_key)
+
+        timestamp_iso = f"{date}T{time_str}Z"
+
+        event = {
+            "uuid": str(event_uuid),
+            "workspace": workspace,
+            "sku": sku,
+            "data_size": sc_bytes,
+            "timestamp": timestamp_iso,
+            "aggregation_key": aggregation_key,
+        }
+        return event
 
     def run(self):
         logger.info("Running BillingScanner...")
