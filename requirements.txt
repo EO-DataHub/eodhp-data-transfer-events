@@ -8,16 +8,16 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-boto3==1.37.34
+boto3==1.38.5
     # via
     #   eodhp-accounting-cloudfront (pyproject.toml)
     #   eodhp-utils
-botocore==1.37.34
+botocore==1.38.5
     # via
     #   boto3
     #   eodhp-utils
     #   s3transfer
-certifi==2025.1.31
+certifi==2025.4.26
     # via
     #   pulsar-client
     #   requests
@@ -43,9 +43,9 @@ jmespath==1.0.1
     #   botocore
 jsonschema==4.23.0
     # via eodhp-utils
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.4.1
     # via jsonschema
-opentelemetry-api==1.32.0
+opentelemetry-api==1.32.1
     # via
     #   eodhp-utils
     #   opentelemetry-instrumentation
@@ -53,21 +53,21 @@ opentelemetry-api==1.32.0
     #   opentelemetry-processor-baggage
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.53b0
+opentelemetry-instrumentation==0.53b1
     # via opentelemetry-instrumentation-logging
-opentelemetry-instrumentation-logging==0.53b0
+opentelemetry-instrumentation-logging==0.53b1
     # via eodhp-utils
-opentelemetry-processor-baggage==0.53b0
+opentelemetry-processor-baggage==0.53b1
     # via eodhp-utils
-opentelemetry-sdk==1.32.0
+opentelemetry-sdk==1.32.1
     # via
     #   eodhp-utils
     #   opentelemetry-processor-baggage
-opentelemetry-semantic-conventions==0.53b0
+opentelemetry-semantic-conventions==0.53b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-sdk
-packaging==24.2
+packaging==25.0
     # via opentelemetry-instrumentation
 pulsar-client==3.6.1
     # via
@@ -89,7 +89,7 @@ rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
-s3transfer==0.11.4
+s3transfer==0.12.0
     # via boto3
 six==1.17.0
     # via python-dateutil
