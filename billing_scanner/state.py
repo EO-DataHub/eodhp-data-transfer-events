@@ -19,7 +19,7 @@ class ScannerState:
         # Open the file in r+ mode; if file does not exist, create it.
         if not os.path.exists(self.file_location):
             # Create an empty state file if it doesn't exist.
-            with open(self.file_location, "w+") as f:
+            with open(self.file_location, "w") as f:
                 json.dump({"last_processed": ""}, f)
 
         # Open the file in read-write mode.
@@ -31,7 +31,7 @@ class ScannerState:
             data = json.load(self.f)
             self.last_processed = data.get("last_processed", "")
         except json.JSONDecodeError:
-            self.last_processed = set()
+            self.last_processed = ""
         return self
 
     def get_last_processed_key(self) -> str:
@@ -45,7 +45,7 @@ class ScannerState:
     def __exit__(self, exc_type, exc_value, traceback):
         # Write the updated state back to the file.
         self.f.seek(0)
-        json.dump({"last_processed": list(self.last_processed)}, self.f, indent=2)
+        json.dump({"last_processed": self.last_processed}, self.f, indent=2)
         self.f.truncate()
         # Release the lock and close the file.
         fcntl.flock(self.f, fcntl.LOCK_UN)

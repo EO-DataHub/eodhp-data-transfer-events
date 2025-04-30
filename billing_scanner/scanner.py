@@ -118,7 +118,7 @@ class BillingScanner:
         # x‑host‑header field
         x_host_header = fields[15] if len(fields) > 15 else ""
 
-        suffix = f".{self.config.WORKSPACES_DOMAIN}"
+        suffix = f"{self.config.WORKSPACES_DOMAIN}"
         if not x_host_header.endswith(suffix):
             logger.info("Host '%s' doesn't end in '%s'; ignoring line", x_host_header, suffix)
             return None
