@@ -91,8 +91,8 @@ def dummy_scanner(monkeypatch, tmp_path):
     # 15:x-edge-result-type, 16:x-edge-request-id, 17:x-host-header.
     dummy_log_content = (
         "#Version: 1.0\n"
-        "#Fields:\ttimestamp\tDistributionId\tdate\ttime\tx-edge-location\tsc-bytes\tc-ip\tcs-method\tcs(Host)\tcs-uri-stem\tsc-status\tcs(Referer)\tcs(User-Agent)\tcs-uri-query\tcs(Cookie)\tx-edge-result-type\tx-edge-request-id\tx-host-header\n"
-        "1744033128\tEYK26O46YS1D0\t2025-04-07\t13:38:48\tLHR3-C2\t100\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
+        "#Fields:\tdate\ttime\tx-edge-location\tsc-bytes\tc-ip\tcs-method\tcs(Host)\tcs-uri-stem\tsc-status\tcs(Referer)\tcs(User-Agent)\tcs-uri-query\tcs(Cookie)\tx-edge-result-type\tx-edge-request-id\tx-host-header\n"
+        "2025-04-07\t13:38:48\tLHR3-C2\t100\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
     )
     scanner.download_log_file = lambda key: dummy_log_content
 
@@ -107,7 +107,7 @@ def test_process_log_line_valid(dummy_scanner):
     scanner, _ = dummy_scanner
     # Create a valid log line with 18 tab-separated fields.
     log_line = (
-        "1744033128\tdummy\t2025-04-07\t13:38:48\tLHR3-C2\t100\t1.1.1.1\tGET\tdummy.example.com\t"
+        "2025-04-07\t13:38:48\tLHR3-C2\t100\t1.1.1.1\tGET\tdummy.example.com\t"
         "/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk"
     )
     result = scanner.process_log_line(log_line, "dummy_log.txt")
@@ -132,9 +132,9 @@ def test_process_log_file_aggregation(dummy_scanner):
     # For file aggregation, we simulate a file with two valid log lines that share the same aggregation key.
     dummy_log_content = (
         "#Version: 1.0\n"
-        "#Fields:\ttimestamp\tDistributionId\tdate\ttime\tx-edge-location\tsc-bytes\tc-ip\tcs-method\tcs(Host)\tcs-uri-stem\tsc-status\tcs(Referer)\tcs(User-Agent)\tcs-uri-query\tcs(Cookie)\tx-edge-result-type\tx-edge-request-id\tx-host-header\n"
-        "1744033128\tEYK26O46YS1D0\t2025-04-07\t13:38:48\tLHR3-C2\t398\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
-        "1744033128\tEYK26O46YS1D0\t2025-04-07\t13:39:00\tLHR3-C2\t200\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
+        "#Fields:\tdate\ttime\tx-edge-location\tsc-bytes\tc-ip\tcs-method\tcs(Host)\tcs-uri-stem\tsc-status\tcs(Referer)\tcs(User-Agent)\tcs-uri-query\tcs(Cookie)\tx-edge-result-type\tx-edge-request-id\tx-host-header\n"
+        "2025-04-07\t13:38:48\tLHR3-C2\t398\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
+        "2025-04-07\t13:39:00\tLHR3-C2\t200\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
     )
     scanner.download_log_file = lambda key: dummy_log_content
     result = scanner.process_log_file("dummy_log.txt")

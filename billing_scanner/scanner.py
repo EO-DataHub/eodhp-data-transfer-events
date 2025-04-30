@@ -110,13 +110,13 @@ class BillingScanner:
 
         # Split by tab
         fields = line.split("\t")
-        date = fields[2]
-        time_str = fields[3]
-        sc_bytes = int(fields[5])
-        client_ip = fields[6]
+        date = fields[0]
+        time_str = fields[1]
+        sc_bytes = int(fields[3])
+        client_ip = fields[4]
 
         # x‑host‑header field
-        x_host_header = fields[17] if len(fields) > 17 else ""
+        x_host_header = fields[15] if len(fields) > 15 else ""
 
         suffix = f".{self.config.WORKSPACES_DOMAIN}"
         if not x_host_header.endswith(suffix):
