@@ -1,15 +1,6 @@
-# UK EO Data Hub Platform: template repository
+# UK EO Data Hub Platform: Data transfer billing events
 
-This serves as a template repository for new UKEODHP Python-base software components.
-
-When using this template remember to:
-* Edit `pyproject.toml` and set everything marked `CHANGEME`
-* Update the dependencies as described below.
-* Create a Docker repo in AWS (https://eu-west-2.console.aws.amazon.com/ecr/create-repository?region=eu-west-2 for
-  the Telespazio UKEODHP repos) and update `Makefile` with the name of the Docker image to build.
-* Consider adding `dockerrun` and/or `run` targets to the `Makefile`.
-* Update `Dockerfile`
-* Add a description here of how to do local development.
+This component collects billing events for CloudFront‐based data transfer by workspaces. It reads CloudFront access logs from S3, aggregates bytes transferred per workspace and egress category (in‐region, inter‐region, internet), and publishes a single BillingEvent per group to a configured Pulsar topic.
 
 # Development of this component
 
@@ -113,3 +104,5 @@ manually in the following way:
 * Run `make dockerbuild` (for images tagged `latest`) or `make dockerbuild VERSION=1.2.3` for a release tagged `1.2.3`.
   The image will be available locally within Docker after this step.
 * Run `make dockerpush` or `make dockerpush VERSION=1.2.3`. This will send the image to the ECR repository.
+
+
