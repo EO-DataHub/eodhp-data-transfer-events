@@ -1,7 +1,6 @@
 import json
 import logging
 from enum import Enum
-from typing import Tuple
 
 import requests
 import SubnetTree
@@ -16,61 +15,44 @@ class EgressSKU(Enum):
 
 
 class AWSIPClassifier:
-    """
-    AWSIPClassifier encapsulates the logic for loading AWS IP ranges and classifying a client IP
+    """AWSIPClassifier encapsulates the logic for loading AWS IP ranges and classifying a client IP
     into one of three egress categories (SKUs).
-
-    Example usage:
-        classifier = AWSIPClassifier(
-            url="https://ip-ranges.amazonaws.com/ip-ranges.json",
-            current_region="eu-west-2",
-            fallback_file="fallback_ip_ranges.json"  # Optional fallback
-        )
-        sku = classifier.classify("52.93.153.170")  # Returns an EgressSKU enum member
     """
 
-    def __init__(self, url: str, current_region: str, fallback_file: str = None):
+    def __init__(self, url: str, current_region: str, fallback_file: str | None = None) -> None:
         self.url = url
         self.current_region = current_region
-        # Try loading from the remote URL...
         try:
             response = requests.get(self.url)
             response.raise_for_status()
             ip_data = response.json()
-            logger.info(f"Successfully loaded AWS IP ranges from remote URL {self.url}.")
+            logger.info("Successfully loaded AWS IP ranges from remote URL %s.", self.url)
         except Exception:
-            logger.exception(f"Failed to load AWS IP ranges from remote URL {self.url}.")
-            # If a fallback file is provided, attempt to load it.
+            logger.exception("Failed to load AWS IP ranges from remote URL %s.", self.url)
             if fallback_file:
                 try:
-                    with open(fallback_file, "r") as f:
+                    with open(fallback_file) as f:
                         ip_data = json.load(f)
                     logger.info("Successfully loaded AWS IP ranges from fallback file.")
                 except Exception:
                     logger.exception("Failed to load AWS IP ranges from fallback file.")
-                    raise Exception("Cannot load AWS IP ranges; aborting to prevent overcharging.")
+                    raise Exception("Cannot load AWS IP ranges; aborting to prevent overcharging.") from None
             else:
-                raise Exception("Cannot load AWS IP ranges and no fallback specified.")
+                raise Exception("Cannot load AWS IP ranges and no fallback specified.") from None
 
         self.current_tree, self.aws_tree = self.build_trees(ip_data, current_region)
 
     @staticmethod
     def build_trees(
-        ip_data: dict, current_region: str
-    ) -> Tuple[SubnetTree.SubnetTree, SubnetTree.SubnetTree]:
-        """
-        Builds two SubnetTree objects:
-        - current_tree: ranges for the specified current_region
-        - aws_tree: ranges for all other regions
-
-        Includes both IPv4 (ip_prefix) and IPv6 (ipv6_prefix).
-        """
+        ip_data: dict[str, list[dict[str, str]]],
+        current_region: str,
+    ) -> tuple[SubnetTree.SubnetTree, SubnetTree.SubnetTree]:
+        """Builds two SubnetTree objects for current-region and other-region prefixes."""
         current_tree = SubnetTree.SubnetTree()
         aws_tree = SubnetTree.SubnetTree()
         for prefix in ip_data.get("prefixes", []):
             region = prefix.get("region", "")
 
-            # IPv4
             cidr4 = prefix.get("ip_prefix")
             if cidr4:
                 if region == current_region:
@@ -78,7 +60,6 @@ class AWSIPClassifier:
                 else:
                     aws_tree[cidr4] = EgressSKU.INTERREGION.value
 
-            # IPv6
             cidr6 = prefix.get("ipv6_prefix")
             if cidr6:
                 if region == current_region:
