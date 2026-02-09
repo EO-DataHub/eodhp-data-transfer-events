@@ -1,21 +1,23 @@
 # syntax=docker/dockerfile:1
-FROM python:3.12-slim-bullseye
+FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim
 
-RUN rm -f /etc/apt/apt.conf.d/docker-clean; \
-    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN apt-get update -y && apt-get install --yes --quiet g++ git && rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update -y && apt-get upgrade -y \
-    && apt-get install --yes --quiet git g++
+ENV UV_NO_DEV=1
 
-WORKDIR /billing_scanner
+WORKDIR /app
 
-# Copy necessary files
-ADD LICENSE requirements.txt ./
-ADD billing_scanner ./billing_scanner/
-ADD pyproject.toml ./
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
 
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install -r requirements.txt .
+# Copy project files
+COPY . /app
 
-CMD ["python", "-m", "billing_scanner"]
+# Sync the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+CMD ["uv", "run", "--no-sync", "python", "-m", "billing_scanner"]

@@ -1,26 +1,29 @@
 import gzip
 import logging
+from typing import Protocol
 
 from eodhp_utils.runner import get_boto3_session
 
 logger = logging.getLogger(__name__)
 
 
-def init_s3_resource(region: str):
+class S3Client(Protocol):
+    def get_paginator(self, operation_name: str) -> object: ...
+    def get_object(self, **kwargs: str) -> dict[str, object]: ...
+
+
+def init_s3_resource(region: str) -> object:
     return get_boto3_session().resource("s3", region_name=region)
 
 
-def init_s3_client(region: str):
+def init_s3_client(region: str) -> S3Client:
     return get_boto3_session().client("s3", region_name=region)
 
 
-def list_files(s3_client, bucket: str, prefix: str, start_after: str = None) -> list:
-    """
-    List all S3 object keys under the given prefix.
-    If DISTRIBUTION_ID is set in the configuration, the prefix is adjusted.
-    """
+def list_files(s3_client: S3Client, bucket: str, prefix: str, start_after: str | None = None) -> list[str]:
+    """List all S3 object keys under the given prefix."""
     paginator = s3_client.get_paginator("list_objects_v2")
-    kwargs = {"Bucket": bucket, "Prefix": prefix}
+    kwargs: dict[str, str] = {"Bucket": bucket, "Prefix": prefix}
     if start_after:
         kwargs["StartAfter"] = start_after
     file_keys = []
@@ -30,7 +33,7 @@ def list_files(s3_client, bucket: str, prefix: str, start_after: str = None) -> 
     return file_keys
 
 
-def download_file(s3_client, bucket: str, key: str) -> str:
+def download_file(s3_client: S3Client, bucket: str, key: str) -> str:
     try:
         response = s3_client.get_object(Bucket=bucket, Key=key)
         body = response["Body"].read()
@@ -40,5 +43,5 @@ def download_file(s3_client, bucket: str, key: str) -> str:
             body = body.decode("utf-8")
         return body
     except Exception as e:
-        logger.exception(f"Failed to download file from bucket '{bucket}' with key '{key}': {e}")
+        logger.exception("Failed to download file from bucket '%s' with key '%s': %s", bucket, key, e)
         raise
