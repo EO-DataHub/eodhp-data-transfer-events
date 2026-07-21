@@ -56,10 +56,9 @@ def dummy_scanner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[Bill
     monkeypatch.setenv("PULSAR_TOPIC", dummy_config.PULSAR_TOPIC)
     monkeypatch.setenv("AWS_REGION", dummy_config.AWS_REGION)
 
-    monkeypatch.setattr("eodhp_utils.runner.get_pulsar_client", lambda *args, **kwargs: DummyPulsarClient())
     monkeypatch.setattr(
-        "eodhp_utils.runner.Client",
-        lambda service_url, message_listener_threads=1: DummyPulsarClient(),
+        "billing_scanner.pulsar_utils.get_pulsar_client",
+        lambda *args, **kwargs: DummyPulsarClient(),
     )
 
     scanner = BillingScanner()
