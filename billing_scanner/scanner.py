@@ -56,7 +56,11 @@ class BillingScanner:
             }
         )
         for line in content.splitlines():
-            event_data = self.process_log_line(line, key)
+            try:
+                event_data = self.process_log_line(line, key)
+            except Exception:
+                logger.exception("Skipping malformed log line in '%s': %r", key, line)
+                continue
             if event_data:
                 group_key = event_data["aggregation_key"]
                 group = aggregation[group_key]
