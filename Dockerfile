@@ -20,4 +20,9 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
+RUN groupadd --system app \
+    && useradd --system --gid app --home-dir /app --no-create-home app \
+    && chown -R app:app /app
+USER app
+
 CMD ["uv", "run", "--no-sync", "python", "-m", "billing_scanner"]
