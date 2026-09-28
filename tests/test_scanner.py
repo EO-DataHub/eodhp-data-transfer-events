@@ -125,3 +125,26 @@ def test_process_log_file_aggregation(
     assert event.event_end == "2025-04-07T13:39:00Z"
     assert event.workspace == "workspace1"
     assert event.sku == "EGRESS-REGION"
+
+
+def test_process_log_file_skips_malformed_line(
+    dummy_scanner: tuple[BillingScanner, DummyProducer], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A malformed line (too few fields) should be skipped, not crash the whole file."""
+    scanner, dummy_producer = dummy_scanner
+    dummy_log_content = (
+        "#Version: 1.0\n"
+        "#Fields:\tdate\ttime\tx-edge-location\tsc-bytes\tc-ip\tcs-method\tcs(Host)\tcs-uri-stem\tsc-status\tcs(Referer)\tcs(User-Agent)\tcs-uri-query\tcs(Cookie)\tx-edge-result-type\tx-edge-request-id\tx-host-header\n"
+        "2025-04-07\t13:38:48\n"
+        "2025-04-07\t13:39:00\tLHR3-C2\t200\t1.1.1.1\tGET\tdummy.example.com\t/notebooks/user/workspace1/api/sessions\t200\t-\t-\t-\t-\tMiss\t-\tworkspace1.eodatahub-workspaces.org.uk\n"
+    )
+    monkeypatch.setattr(scanner, "download_log_file", lambda key: dummy_log_content)
+    result = scanner.process_log_file("dummy_log.txt")
+    assert result is True, "Expected process_log_file to return True."
+    assert len(dummy_producer.sent_events) == 1, (
+        f"Expected the malformed line to be skipped and the valid line still processed, "
+        f"got {len(dummy_producer.sent_events)} events"
+    )
+    event = dummy_producer.sent_events[0]
+    assert event.quantity == 200.0
+    assert event.workspace == "workspace1"

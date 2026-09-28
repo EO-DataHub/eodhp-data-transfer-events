@@ -23,7 +23,7 @@ class AWSIPClassifier:
         self.url = url
         self.current_region = current_region
         try:
-            response = requests.get(self.url)
+            response = requests.get(self.url, timeout=30)
             response.raise_for_status()
             ip_data = response.json()
             logger.info("Successfully loaded AWS IP ranges from remote URL %s.", self.url)
